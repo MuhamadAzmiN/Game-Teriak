@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Adu Teriak</title>
+    <title>Game Adu Teriak - Tantangan Ekstra</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -76,8 +76,8 @@
 </head>
 <body>
     <div class="game-container">
-        <h1>Game Adu Teriak</h1>
-        <p>Teriak untuk mengisi lingkaran! Semakin keras teriakan, semakin cepat terisi!</p>
+        <h1>Game Adu Teriak - Tantangan Ekstra</h1>
+        <p>Teriak lebih keras dan cepat untuk mengisi lingkaran dalam waktu terbatas!</p>
         
         <div class="circle-container">
             <div id="empty-circle"></div>
@@ -85,7 +85,7 @@
         </div>
         
         <div class="progress-text">Progress: <span id="progress">0</span>%</div>
-        <div class="timer-text">Waktu Tersisa: <span id="timer">10</span> detik</div>
+        <div class="timer-text">Waktu Tersisa: <span id="timer">5</span> detik</div>
         
         <div>
             <button id="start-btn">Mulai</button>
@@ -110,10 +110,10 @@
         let isGameRunning = false;
         let countdown;
         
-        const WIN_THRESHOLD = 100;
-        const FILL_RATE = 4; // Increased fill rate to make it easier to win within 10 seconds
-        const DECAY_RATE = 1;
-        const GAME_DURATION = 10; // seconds
+        const WIN_THRESHOLD = 120; // Meningkatkan threshold menjadi lebih sulit
+        const FILL_RATE = 2; // Mengurangi fill rate agar lebih menantang
+        const DECAY_RATE = 2; // Meningkatkan decay rate
+        const GAME_DURATION = 5; // Mengurangi waktu menjadi lebih cepat
 
         async function startGame() {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -173,13 +173,13 @@
             const average = sum / dataArray.length;
 
             if (average > 5) {
-                fillLevel = Math.min(100, fillLevel + (average / 128) * FILL_RATE);
+                fillLevel = Math.min(WIN_THRESHOLD, fillLevel + (average / 128) * FILL_RATE);
             } else {
                 fillLevel = Math.max(0, fillLevel - DECAY_RATE);
             }
 
-            fillCircle.style.height = `${fillLevel}%`;
-            progressSpan.textContent = Math.round(fillLevel);
+            fillCircle.style.height = `${(fillLevel / WIN_THRESHOLD) * 100}%`;
+            progressSpan.textContent = Math.round((fillLevel / WIN_THRESHOLD) * 100);
 
             if (fillLevel >= WIN_THRESHOLD) {
                 stopGame("🎉 SELAMAT! ANDA MENANG! 🎉");
