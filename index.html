@@ -67,6 +67,11 @@
             font-size: 18px;
             margin-top: 10px;
         }
+        .timer-text {
+            font-size: 18px;
+            color: red;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -80,6 +85,7 @@
         </div>
         
         <div class="progress-text">Progress: <span id="progress">0</span>%</div>
+        <div class="timer-text">Waktu Tersisa: <span id="timer">10</span> detik</div>
         
         <div>
             <button id="start-btn">Mulai</button>
@@ -95,16 +101,19 @@
         const fillCircle = document.getElementById('fill-circle');
         const resultDiv = document.getElementById('result');
         const progressSpan = document.getElementById('progress');
+        const timerSpan = document.getElementById('timer');
 
         let audioContext;
         let analyser;
         let microphone;
         let fillLevel = 0;
         let isGameRunning = false;
+        let countdown;
         
         const WIN_THRESHOLD = 100;
-        const FILL_RATE = 2;
+        const FILL_RATE = 4; // Increased fill rate to make it easier to win within 10 seconds
         const DECAY_RATE = 1;
+        const GAME_DURATION = 10; // seconds
 
         async function startGame() {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -122,6 +131,8 @@
                 resultDiv.innerText = "";
                 fillLevel = 0;
                 fillCircle.style.height = "0%";
+                progressSpan.textContent = "0";
+                startCountdown();
                 updateVisualization();
                 
             } catch (err) {
@@ -130,7 +141,7 @@
             }
         }
 
-        function stopGame() {
+        function stopGame(message = '') {
             if (microphone) {
                 microphone.disconnect();
             }
@@ -142,6 +153,11 @@
             startButton.disabled = false;
             stopButton.disabled = true;
             fillCircle.style.height = "0%";
+            clearInterval(countdown);
+            
+            if (message) {
+                resultDiv.innerText = message;
+            }
         }
 
         function updateVisualization() {
@@ -166,17 +182,30 @@
             progressSpan.textContent = Math.round(fillLevel);
 
             if (fillLevel >= WIN_THRESHOLD) {
-                resultDiv.innerText = "🎉 SELAMAT! ANDA MENANG! 🎉";
-                alert("Menang! Lingkaran sudah penuh!");
-                stopGame();
+                stopGame("🎉 SELAMAT! ANDA MENANG! 🎉");
                 return;
             }
 
             requestAnimationFrame(updateVisualization);
         }
 
+        function startCountdown() {
+            let timeLeft = GAME_DURATION;
+            timerSpan.textContent = timeLeft;
+
+            countdown = setInterval(() => {
+                timeLeft -= 1;
+                timerSpan.textContent = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    stopGame("⏰ Waktu habis! Coba lagi.");
+                }
+            }, 1000);
+        }
+
         startButton.addEventListener('click', startGame);
-        stopButton.addEventListener('click', stopGame);
+        stopButton.addEventListener('click', () => stopGame("Permainan dihentikan."));
     </script>
 </body>
 </html>
