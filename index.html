@@ -22,7 +22,7 @@
             width: 300px;
             height: 300px;
             border-radius: 50%;
-            overflow: hidden; /* Penting: memastikan fill-circle tidak keluar dari container */
+            overflow: hidden;
         }
         #empty-circle {
             position: absolute;
@@ -40,7 +40,7 @@
             width: 100%;
             height: 0%;
             background-color: #4CAF50;
-            z-index: 2; /* Fill circle di atas empty circle */
+            z-index: 2;
             transition: height 0.1s ease;
         }
         button {
@@ -167,6 +167,7 @@
 
             if (fillLevel >= WIN_THRESHOLD) {
                 resultDiv.innerText = "🎉 SELAMAT! ANDA MENANG! 🎉";
+                alert("Menang! Lingkaran sudah penuh!");
                 stopGame();
                 return;
             }
