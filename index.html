@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Adu Teriak</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+            background-color: #f0f0f0;
+        }
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .circle-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            overflow: hidden; /* Penting: memastikan fill-circle tidak keluar dari container */
+        }
+        #empty-circle {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #cccccc;
+            z-index: 1;
+        }
+        #fill-circle {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 0%;
+            background-color: #4CAF50;
+            z-index: 2; /* Fill circle di atas empty circle */
+            transition: height 0.1s ease;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #result {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 20px;
+            color: #4CAF50;
+        }
+        .progress-text {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Game Adu Teriak</h1>
+        <p>Teriak untuk mengisi lingkaran! Semakin keras teriakan, semakin cepat terisi!</p>
+        
+        <div class="circle-container">
+            <div id="empty-circle"></div>
+            <div id="fill-circle"></div>
+        </div>
+        
+        <div class="progress-text">Progress: <span id="progress">0</span>%</div>
+        
+        <div>
+            <button id="start-btn">Mulai</button>
+            <button id="stop-btn" disabled>Berhenti</button>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const startButton = document.getElementById('start-btn');
+        const stopButton = document.getElementById('stop-btn');
+        const fillCircle = document.getElementById('fill-circle');
+        const resultDiv = document.getElementById('result');
+        const progressSpan = document.getElementById('progress');
+
+        let audioContext;
+        let analyser;
+        let microphone;
+        let fillLevel = 0;
+        let isGameRunning = false;
+        
+        const WIN_THRESHOLD = 100;
+        const FILL_RATE = 2;
+        const DECAY_RATE = 1;
+
+        async function startGame() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 2048;
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                microphone = audioContext.createMediaStreamSource(stream);
+                microphone.connect(analyser);
+
+                isGameRunning = true;
+                startButton.disabled = true;
+                stopButton.disabled = false;
+                resultDiv.innerText = "";
+                fillLevel = 0;
+                fillCircle.style.height = "0%";
+                updateVisualization();
+                
+            } catch (err) {
+                console.error('Gagal mengakses mikrofon:', err);
+                resultDiv.innerText = "Error: Tidak dapat mengakses mikrofon!";
+            }
+        }
+
+        function stopGame() {
+            if (microphone) {
+                microphone.disconnect();
+            }
+            if (audioContext) {
+                audioContext.close();
+            }
+            
+            isGameRunning = false;
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            fillCircle.style.height = "0%";
+        }
+
+        function updateVisualization() {
+            if (!isGameRunning) return;
+
+            const dataArray = new Uint8Array(analyser.fftSize);
+            analyser.getByteTimeDomainData(dataArray);
+
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+                sum += Math.abs(dataArray[i] - 128);
+            }
+            const average = sum / dataArray.length;
+
+            if (average > 5) {
+                fillLevel = Math.min(100, fillLevel + (average / 128) * FILL_RATE);
+            } else {
+                fillLevel = Math.max(0, fillLevel - DECAY_RATE);
+            }
+
+            fillCircle.style.height = `${fillLevel}%`;
+            progressSpan.textContent = Math.round(fillLevel);
+
+            if (fillLevel >= WIN_THRESHOLD) {
+                resultDiv.innerText = "🎉 SELAMAT! ANDA MENANG! 🎉";
+                stopGame();
+                return;
+            }
+
+            requestAnimationFrame(updateVisualization);
+        }
+
+        startButton.addEventListener('click', startGame);
+        stopButton.addEventListener('click', stopGame);
+    </script>
+</body>
+</html>
