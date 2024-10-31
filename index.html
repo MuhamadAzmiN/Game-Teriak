@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Adu Teriak</title>
+    <title>Game Adu Teriak - Tantangan Ekstra</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -67,12 +67,17 @@
             font-size: 18px;
             margin-top: 10px;
         }
+        .timer-text {
+            font-size: 18px;
+            color: red;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="game-container">
-        <h1>Game Adu Teriak</h1>
-        <p>Teriak untuk mengisi lingkaran! Semakin keras teriakan, semakin cepat terisi!</p>
+        <h1>Game Adu Teriak - Tantangan Ekstra</h1>
+        <p>Teriak lebih keras dan cepat untuk mengisi lingkaran dalam waktu terbatas!</p>
         
         <div class="circle-container">
             <div id="empty-circle"></div>
@@ -80,6 +85,7 @@
         </div>
         
         <div class="progress-text">Progress: <span id="progress">0</span>%</div>
+        <div class="timer-text">Waktu Tersisa: <span id="timer">5</span> detik</div>
         
         <div>
             <button id="start-btn">Mulai</button>
@@ -95,16 +101,19 @@
         const fillCircle = document.getElementById('fill-circle');
         const resultDiv = document.getElementById('result');
         const progressSpan = document.getElementById('progress');
+        const timerSpan = document.getElementById('timer');
 
         let audioContext;
         let analyser;
         let microphone;
         let fillLevel = 0;
         let isGameRunning = false;
+        let countdown;
         
-        const WIN_THRESHOLD = 100;
-        const FILL_RATE = 2;
-        const DECAY_RATE = 1;
+        const WIN_THRESHOLD = 120; // Meningkatkan threshold menjadi lebih sulit
+        const FILL_RATE = 2; // Mengurangi fill rate agar lebih menantang
+        const DECAY_RATE = 2; // Meningkatkan decay rate
+        const GAME_DURATION = 5; // Mengurangi waktu menjadi lebih cepat
 
         async function startGame() {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -122,6 +131,8 @@
                 resultDiv.innerText = "";
                 fillLevel = 0;
                 fillCircle.style.height = "0%";
+                progressSpan.textContent = "0";
+                startCountdown();
                 updateVisualization();
                 
             } catch (err) {
@@ -130,7 +141,7 @@
             }
         }
 
-        function stopGame() {
+        function stopGame(message = '') {
             if (microphone) {
                 microphone.disconnect();
             }
@@ -142,6 +153,11 @@
             startButton.disabled = false;
             stopButton.disabled = true;
             fillCircle.style.height = "0%";
+            clearInterval(countdown);
+            
+            if (message) {
+                resultDiv.innerText = message;
+            }
         }
 
         function updateVisualization() {
@@ -157,26 +173,39 @@
             const average = sum / dataArray.length;
 
             if (average > 5) {
-                fillLevel = Math.min(100, fillLevel + (average / 128) * FILL_RATE);
+                fillLevel = Math.min(WIN_THRESHOLD, fillLevel + (average / 128) * FILL_RATE);
             } else {
                 fillLevel = Math.max(0, fillLevel - DECAY_RATE);
             }
 
-            fillCircle.style.height = `${fillLevel}%`;
-            progressSpan.textContent = Math.round(fillLevel);
+            fillCircle.style.height = `${(fillLevel / WIN_THRESHOLD) * 100}%`;
+            progressSpan.textContent = Math.round((fillLevel / WIN_THRESHOLD) * 100);
 
             if (fillLevel >= WIN_THRESHOLD) {
-                resultDiv.innerText = "🎉 SELAMAT! ANDA MENANG! 🎉";
-                alert("Menang! Lingkaran sudah penuh!");
-                stopGame();
+                stopGame("🎉 SELAMAT! ANDA MENANG! 🎉");
                 return;
             }
 
             requestAnimationFrame(updateVisualization);
         }
 
+        function startCountdown() {
+            let timeLeft = GAME_DURATION;
+            timerSpan.textContent = timeLeft;
+
+            countdown = setInterval(() => {
+                timeLeft -= 1;
+                timerSpan.textContent = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    stopGame("⏰ Waktu habis! Coba lagi.");
+                }
+            }, 1000);
+        }
+
         startButton.addEventListener('click', startGame);
-        stopButton.addEventListener('click', stopGame);
+        stopButton.addEventListener('click', () => stopGame("Permainan dihentikan."));
     </script>
 </body>
 </html>
